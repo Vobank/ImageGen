@@ -10,6 +10,7 @@ dist/
 *.egg-info/
 .idea/
 .vscode/
+browser_profile/
 .env
 .env.*
 *.key
@@ -19,6 +20,16 @@ token.json
 service_account.json
 config.json
 web/config.json
+memory.json
+chats.json
+history.json
+recent.json
+*.db
+*.db.*
+*.sqlite
+*.sqlite3
+*.bak*
+*.backup*
 models/
 weights/
 checkpoints/
@@ -31,6 +42,7 @@ checkpoints/
 *.gguf
 outputs/
 output/
+images/
 logs/
 *.log
 cache/
