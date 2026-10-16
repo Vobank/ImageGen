@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Генератор картинок</title>
+<style>
+  :root{--bg:#0e0f13;--panel:#171922;--panel2:#1f2230;--line:#2b2f3d;--text:#e9eaf0;
+        --dim:#9aa1b2;--accent:#ff5c8a;--accent2:#7c5cff}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 70% -10%,#241a2e,transparent),var(--bg);
+       color:var(--text);font-family:"Segoe UI",system-ui,Arial,sans-serif}
+  header{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  header .logo{font-weight:800;font-size:20px}
+  header .logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));
+                    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tab{padding:9px 16px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);
+       color:var(--dim);cursor:pointer;font-weight:600;font-size:14px}
+  .tab.active{color:#fff;border-color:var(--accent)}
+  label{display:block;font-size:13px;color:var(--dim);margin:12px 0 5px}
+  textarea,input,select{width:100%;padding:12px;border-radius:11px;border:1px solid var(--line);
+       background:var(--panel2);color:var(--text);font-size:15px;font-family:inherit}
+  textarea{resize:vertical;min-height:80px}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  .btn{margin-top:14px;width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
+       font-size:16px;font-weight:700;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .btn:disabled{opacity:.5;cursor:default}
+  .out{min-height:360px;display:flex;align-items:center;justify-content:center;
+       border:1px dashed var(--line);border-radius:14px;overflow:hidden;background:#0a0b0f}
+  .out img{max-width:100%;max-height:70vh;border-radius:10px}
+  .hint{color:var(--dim);font-size:12px;text-align:center;margin-top:8px}
+  .spin{width:44px;height:44px;border:4px solid var(--line);border-top-color:var(--accent);
+        border-radius:50%;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}
+  .status{color:var(--dim);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+  .gallery{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;max-height:170px;overflow:auto}
+  .gallery img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+  .fmts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .fmt,.cnt,.preset{padding:8px 12px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);
+       color:var(--dim);cursor:pointer;font-size:13px;font-weight:600}
+  .fmt.active,.cnt.active{color:#fff;border-color:var(--accent)}
+  .preset:hover{border-color:var(--accent2);color:#fff}
+  .rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+  .rgrid img{width:100%;border-radius:10px;cursor:pointer;border:1px solid var(--line)}
+  .rgrid img.sel{border-color:var(--accent);border-width:2px}
+  details{margin-top:10px}summary{cursor:pointer;color:var(--dim);font-size:13px}
+  .dl{display:inline-block;margin-top:10px;color:var(--accent2);font-size:14px;text-decoration:none}
+  #drop{border:1px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--dim);cursor:pointer}
+</style>
+</head>
+<body>
+<header><div class="logo">🎨 <span>Генератор картинок</span></div>
+  <div style="margin-left:auto;color:var(--dim);font-size:13px">локально · RTX 5080</div></header>
+
+<div class="wrap">
+  <!-- Левая колонка: ввод -->
+  <div class="card">
+    <label style="margin-top:0">🧠 Модель (стиль результата)</label>
+    <select id="model"></select>
+    <div class="tabs" style="margin-top:14px">
+      <div class="tab active" data-t="txt">✍️ Создать</div>
+      <div class="tab" data-t="img">🖼 Переделать</div>
+      <div class="tab" data-t="ref">🖼 По образцу</div>
+      <div class="tab" data-t="clean">🩹 Убрать</div>
+    </div>
+
+    <div id="pane-txt">
+      <label style="margin-top:0">⚡ Быстрый старт (задаёт формат и пример)</label>
+      <div class="fmts" id="presets">
+        <button class="preset" data-w="832" data-h="1216" data-ex="портрет девушки у окна, мягкий дневной свет">👤 Портрет</button>
+        <button class="preset" data-w="1216" data-h="832" data-ex="красивый горный пейзаж на рассвете, лёгкий туман">🏞 Пейзаж</button>
+        <button class="preset" data-w="1344" data-h="768" data-ex="спортивная машина на пустой дороге в пустыне, закат">🚗 Машина</button>
+        <button class="preset" data-w="1024" data-h="1024" data-ex="аппетитная еда на тарелке крупным планом, студийный свет">🍽 Еда/товар</button>
+      </div>
+      <label>Что нарисовать? (можно просто и по-русски — ИИ сам додумает и переведёт)</label>
+      <textarea id="prompt" placeholder="например: кот в космосе"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="enhance" checked style="width:auto"> ✨ Умный промпт (ИИ улучшит описание — живее и красивее)
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="faces" checked style="width:auto"> 🙂 Улучшать лица (перерисовать детальнее — реалистичнее)
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="hires" style="width:auto"> 🔬 Макс. качество / hires (детальнее всё фото, но дольше · только для 1 варианта)
+      </label>
+      <label>📐 Формат кадра</label>
+      <div class="fmts" id="fmts">
+        <button class="fmt active" data-w="1024" data-h="1024">⬜ Квадрат</button>
+        <button class="fmt" data-w="832" data-h="1216">📱 Портрет</button>
+        <button class="fmt" data-w="1216" data-h="832">🖼 Пейзаж</button>
+        <button class="fmt" data-w="768" data-h="1344">📲 Высокий</button>
+        <button class="fmt" data-w="1344" data-h="768">🎞 Широкий</button>
+      </div>
+      <label>🎲 Сколько вариантов за раз (выберешь лучший)</label>
+      <div class="fmts" id="counts">
+        <button class="cnt active" data-c="1">1</button>
+        <button class="cnt" data-c="2">2</button>
+        <button class="cnt" data-c="4">4</button>
+      </div>
+      <details>
+        <summary>Настройки</summary>
+        <label>🚫 Что ещё убрать? (по желанию — можно по-русски)</label>
+        <input id="negative" placeholder="например: без снега, без текста, без очков">
+        <div class="hint" style="text-align:left;margin-top:4px;line-height:1.4">
+          Плохое качество, кривые руки/лица, «пластик» и артефакты приложение убирает <b>само</b>.
+          Здесь — только если хочешь исключить что-то конкретное.</div>
+        <label>Качество (шаги — больше = детальнее, но дольше)</label>
+        <input id="steps" type="number" value="30" min="10" max="50">
+      </details>
+      <button class="btn" id="gen">Сгенерировать ✨</button>
+    </div>
+
+    <div id="pane-img" style="display:none">
+      <div id="drop">📷 Нажми и выбери фото (или перетащи сюда)</div>
+      <input type="file" id="file" accept="image/*" style="display:none">
+      <img id="preview" style="display:none;max-width:100%;border-radius:10px;margin-top:10px">
+      <label>Что с ним сделать?</label>
+      <textarea id="prompt2" placeholder="например: сделать в стиле аниме / другой фон / другой наряд"></textarea>
+      <label>Сила изменения: <span id="sv">0.55</span> (меньше — ближе к оригиналу)</label>
+      <input id="strength" type="range" min="0.2" max="0.9" step="0.05" value="0.55">
+      <button class="btn" id="gen2">Переделать 🪄</button>
+    </div>
+    <div id="pane-ref" style="display:none">
+      <div id="dropr">📷 Добавь 1-4 фото-образца (стиль/лицо/объект)</div>
+      <input type="file" id="filer" accept="image/*" multiple style="display:none">
+      <div id="refthumbs" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+      <label>Что сгенерировать по образцу? (можно пусто)</label>
+      <textarea id="promptr" placeholder="например: в этом стиле, но космос / этот человек на пляже"></textarea>
+      <label>Насколько держаться образца: <span id="rsv">0.6</span> (больше — ближе к фото)</label>
+      <input id="rscale" type="range" min="0.2" max="0.95" step="0.05" value="0.6">
+      <button class="btn" id="genr">Сгенерировать по образцу 🖼</button>
+    </div>
+    <div id="pane-clean" style="display:none">
+      <div id="drop2">📷 Выбери фото, где надо что-то убрать</div>
+      <input type="file" id="file2" accept="image/*" style="display:none">
+      <div style="position:relative;margin-top:10px">
+        <canvas id="cv" style="max-width:100%;border-radius:10px;touch-action:none;cursor:crosshair;display:none"></canvas>
+      </div>
+      <label id="cvhint" style="display:none">👆 Закрась пальцем/мышкой то, что убрать. Кисть: <span id="bsv">40</span></label>
+      <input id="brush" type="range" min="10" max="90" value="40" style="display:none">
+      <label style="display:none" id="cplab">Что тут должно быть? (пусто = просто убрать начисто · или опиши, можно по-русски)</label>
+      <input id="cprompt" placeholder="пусто = убрать и достроить фон · или: поставь тут дерево" style="display:none">
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="clear" style="background:var(--panel2);display:none">Стереть кисть</button>
+        <button class="btn" id="gen3" style="display:none">Убрать 🩹</button>
+      </div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <!-- Правая колонка: результат -->
+  <div class="card">
+    <div class="out" id="out"><div class="hint">Здесь появится картинка</div></div>
+    <div class="rgrid" id="rgrid"></div>
+    <div class="hint" id="seedinfo" style="display:none"></div>
+    <div class="row" style="margin-top:8px">
+      <a class="dl" id="dl" style="display:none" download>⬇ Скачать картинку</a>
+      <button class="btn" id="again" style="display:none;margin-top:0;background:var(--panel2)">🔁 Ещё вариант</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let mode='txt', lastImg=null;
+let curW=1024, curH=1024, curCount=1, lastReq=null;
+const out=document.getElementById('out'), statusEl=document.getElementById('status'),
+      gallery=document.getElementById('gallery'), dl=document.getElementById('dl'),
+      rgrid=document.getElementById('rgrid'), seedinfo=document.getElementById('seedinfo'),
+      againBtn=document.getElementById('again');
+
+// пресеты сцен: задают формат + пример (если поле пустое)
+document.querySelectorAll('#presets .preset').forEach(b=>b.onclick=()=>{
+  curW=+b.dataset.w; curH=+b.dataset.h; syncFmt();
+  const p=document.getElementById('prompt'); if(!p.value.trim()) p.value=b.dataset.ex;
+});
+// формат кадра
+function syncFmt(){document.querySelectorAll('#fmts .fmt').forEach(x=>
+  x.classList.toggle('active', +x.dataset.w===curW && +x.dataset.h===curH));}
+document.querySelectorAll('#fmts .fmt').forEach(b=>b.onclick=()=>{
+  curW=+b.dataset.w; curH=+b.dataset.h; syncFmt();});
+// количество вариантов
+document.querySelectorAll('#counts .cnt').forEach(b=>b.onclick=()=>{
+  curCount=+b.dataset.c;
+  document.querySelectorAll('#counts .cnt').forEach(x=>x.classList.toggle('active',x===b));});
+
+// список моделей
+fetch('/models').then(r=>r.json()).then(j=>{
+  const sel=document.getElementById('model');
+  (j.models||[]).forEach(m=>{const o=document.createElement('option');o.value=m.key;o.textContent=m.name;sel.appendChild(o);});
+}).catch(()=>{});
+function curModel(){return document.getElementById('model').value||'base';}
+
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); mode=t.dataset.t; againBtn.style.display='none';
+  document.getElementById('pane-txt').style.display=mode==='txt'?'':'none';
+  document.getElementById('pane-img').style.display=mode==='img'?'':'none';
+  document.getElementById('pane-ref').style.display=mode==='ref'?'':'none';
+  document.getElementById('pane-clean').style.display=mode==='clean'?'':'none';
+});
+
+let progTimer=null;
+function loading(on,msg){
+  if(on){
+    out.innerHTML='<div style="text-align:center;width:100%">'
+      +'<div class="spin" style="margin:0 auto 14px"></div>'
+      +'<div id="pstage" style="color:var(--dim);font-size:14px">запускаю…</div>'
+      +'<div style="max-width:240px;height:10px;background:#0a0b0f;border:1px solid var(--line);border-radius:6px;margin:12px auto;overflow:hidden">'
+      +'<div id="pbar" style="height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s"></div></div>'
+      +'<div id="ppct" style="color:var(--dim);font-size:12px"></div></div>';
+    clearInterval(progTimer);
+    progTimer=setInterval(async()=>{
+      try{const p=await(await fetch('/progress')).json();
+        const st=document.getElementById('pstage'),bar=document.getElementById('pbar'),pc=document.getElementById('ppct');
+        if(st) st.textContent=p.stage?(p.stage+(p.total?` — шаг ${p.step} из ${p.total}`:'…')):'думаю…';
+        if(bar&&p.total){const pct=Math.round(p.step/p.total*100);bar.style.width=pct+'%';if(pc)pc.textContent=pct+'%';}
+      }catch(e){}
+    },400);
+  } else { clearInterval(progTimer); }
+  statusEl.textContent=msg||'';
+  ['gen','gen2','gen3','genr','again'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=on;});
+}
+function clearGrid(){rgrid.innerHTML='';}
+function show(data, seed){                      // показывает картинку крупно (сетку не трогает)
+  out.innerHTML=''; const im=new Image(); im.src=data; out.appendChild(im);
+  lastImg=data; dl.style.display='inline-block'; dl.href=data; dl.download='картинка.png';
+  if(seed!==undefined && seed!==null){seedinfo.style.display='block';seedinfo.textContent='🌱 seed: '+seed;}
+  else seedinfo.style.display='none';
+}
+function showOne(data, seed){clearGrid(); show(data, seed);}
+function showGrid(list){                        // несколько вариантов: крупно первый + миниатюры
+  clearGrid(); show(list[0].image, list[0].seed);
+  if(list.length<2) return;
+  list.forEach((it,i)=>{const t=new Image();t.src=it.image;if(i===0)t.classList.add('sel');
+    t.onclick=()=>{rgrid.querySelectorAll('img').forEach(x=>x.classList.remove('sel'));t.classList.add('sel');show(it.image,it.seed);};
+    rgrid.appendChild(t);});
+}
+// галерея сохранённых картинок (с сервера, новые первыми)
+async function loadGallery(){
+  try{const j=await(await fetch('/gallery')).json();
+    gallery.innerHTML='';
+    (j.files||[]).forEach(f=>{const u='/images/'+f;const t=new Image();t.src=u;
+      t.onclick=()=>{showOne(u); againBtn.style.display='none';}; gallery.appendChild(t);});
+  }catch(e){}
+}
+loadGallery();
+async function post(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+
+async function runGenerate(req){
+  loading(true,'Рисую… (первая картинка дольше — грузится модель)');
+  lastReq=req;
+  const j=await post('/generate', req);
+  loading(false, j.error||'Готово!');
+  if(j.images){ showGrid(j.images); againBtn.style.display='inline-block'; loadGallery(); }
+  else if(j.image){ showOne(j.image, j.seed); againBtn.style.display='inline-block'; loadGallery(); }
+}
+document.getElementById('gen').onclick=()=>{
+  const prompt=document.getElementById('prompt').value.trim(); if(!prompt)return;
+  runGenerate({prompt, negative:document.getElementById('negative').value,
+    width:curW, height:curH, count:curCount, steps:document.getElementById('steps').value,
+    model:curModel(), enhance:document.getElementById('enhance').checked,
+    faces:document.getElementById('faces').checked, hires:document.getElementById('hires').checked, seed:-1});
+};
+// «Ещё вариант» — тот же запрос, новое случайное зерно, 1 картинка
+againBtn.onclick=()=>{ if(!lastReq)return; runGenerate({...lastReq, count:1, seed:-1}); };
+
+// img2img
+const file=document.getElementById('file'), drop=document.getElementById('drop'),
+      preview=document.getElementById('preview'); let uploaded=null;
+drop.onclick=()=>file.click();
+file.onchange=()=>{const f=file.files[0];if(!f)return;const fr=new FileReader();
+  fr.onload=()=>{uploaded=fr.result;preview.src=fr.result;preview.style.display='block';};fr.readAsDataURL(f);};
+document.getElementById('strength').oninput=e=>document.getElementById('sv').textContent=e.target.value;
+document.getElementById('gen2').onclick=async()=>{
+  const prompt=document.getElementById('prompt2').value.trim();
+  if(!uploaded){statusEl.textContent='Сначала выбери фото.';return;}
+  if(!prompt){statusEl.textContent='Напиши, что сделать с фото.';return;}
+  loading(true,'Переделываю фото…');
+  const j=await post('/img2img',{prompt,image:uploaded,strength:document.getElementById('strength').value,model:curModel()});
+  loading(false, j.error||'Готово!'); if(j.image){showOne(j.image,j.seed);againBtn.style.display='none';loadGallery();}
+};
+
+// ——— Генерация по образцу (IP-Adapter, несколько фото) ———
+let refImages=[];
+document.getElementById('dropr').onclick=()=>document.getElementById('filer').click();
+document.getElementById('filer').onchange=()=>{
+  const files=[...document.getElementById('filer').files].slice(0,4);
+  files.forEach(f=>{const fr=new FileReader();fr.onload=()=>{
+    if(refImages.length>=4)return;
+    refImages.push(fr.result);
+    const t=new Image();t.src=fr.result;t.style.cssText='width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)';
+    document.getElementById('refthumbs').appendChild(t);
+  };fr.readAsDataURL(f);});
+};
+document.getElementById('rscale').oninput=e=>document.getElementById('rsv').textContent=e.target.value;
+document.getElementById('genr').onclick=async()=>{
+  if(!refImages.length){statusEl.textContent='Добавь хотя бы одно фото-образец.';return;}
+  loading(true,'Генерирую по образцу…');
+  const j=await post('/byexample',{prompt:document.getElementById('promptr').value,images:refImages,
+    scale:document.getElementById('rscale').value, model:curModel(), enhance:document.getElementById('enhance').checked});
+  loading(false,j.error||'Готово!'); if(j.image){showOne(j.image,j.seed);againBtn.style.display='none';loadGallery();}
+};
+
+// ——— Убрать с фото (инпейнтинг с рисованием кисти) ———
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const maskCv=document.createElement('canvas'), mctx=maskCv.getContext('2d');
+let photo=null, painting=false, brush=40;
+function showClean(el,on){document.querySelectorAll('#pane-clean canvas,#cvhint,#brush,#cplab,#cprompt,#clear,#gen3').forEach(x=>x.style.display=on?(x.tagName==='CANVAS'?'block':(x.classList.contains('btn')?'':'block')):'none');}
+document.getElementById('drop2').onclick=()=>document.getElementById('file2').click();
+document.getElementById('file2').onchange=()=>{
+  const f=document.getElementById('file2').files[0]; if(!f)return;
+  const fr=new FileReader();
+  fr.onload=()=>{const im=new Image();im.onload=()=>{
+    photo=im; cv.width=maskCv.width=im.width; cv.height=maskCv.height=im.height;
+    ctx.drawImage(im,0,0); mctx.fillStyle='#000'; mctx.fillRect(0,0,cv.width,cv.height);
+    showClean(null,true);
+  };im.src=fr.result;};
+  fr.readAsDataURL(f);
+};
+function pos(e){const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height;
+  const p=e.touches?e.touches[0]:e; return {x:(p.clientX-r.left)*sx,y:(p.clientY-r.top)*sy};}
+function paint(e){if(!painting)return;e.preventDefault();const{x,y}=pos(e);
+  ctx.fillStyle='rgba(255,60,120,.55)';ctx.beginPath();ctx.arc(x,y,brush,0,7);ctx.fill();
+  mctx.fillStyle='#fff';mctx.beginPath();mctx.arc(x,y,brush,0,7);mctx.fill();}
+cv.addEventListener('mousedown',e=>{painting=true;paint(e);});
+cv.addEventListener('mousemove',paint);
+window.addEventListener('mouseup',()=>painting=false);
+cv.addEventListener('touchstart',e=>{painting=true;paint(e);});
+cv.addEventListener('touchmove',paint);
+window.addEventListener('touchend',()=>painting=false);
+document.getElementById('brush').oninput=e=>{brush=+e.target.value;document.getElementById('bsv').textContent=brush;};
+document.getElementById('clear').onclick=()=>{if(photo){ctx.drawImage(photo,0,0);mctx.fillStyle='#000';mctx.fillRect(0,0,cv.width,cv.height);}};
+document.getElementById('gen3').onclick=async()=>{
+  if(!photo){statusEl.textContent='Сначала выбери фото.';return;}
+  loading(true,'Убираю…');
+  const clean=document.createElement('canvas');clean.width=cv.width;clean.height=cv.height;
+  clean.getContext('2d').drawImage(photo,0,0);
+  const j=await post('/inpaint',{image:clean.toDataURL('image/png'),mask:maskCv.toDataURL('image/png'),
+    prompt:document.getElementById('cprompt').value,model:curModel()});
+  loading(false,j.error||'Готово!'); if(j.image){showOne(j.image,j.seed);againBtn.style.display='none';loadGallery();}
+};
+</script>
+</body>
+</html>
