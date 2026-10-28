@@ -27,6 +27,7 @@ A local image generator powered by Stable Diffusion XL for the RTX 5080 — text
 - Модели SDXL (качаются отдельно)
 
 ### Запуск
+- `pip install -r requirements.txt`
 - `Генератор картинок.bat` — запустит сервер и откроет интерфейс в браузере
 
 ---
@@ -48,6 +49,7 @@ A web app that generates images locally on your GPU (nothing goes to the cloud).
 - SDXL models (downloaded separately)
 
 ### Run
+- `pip install -r requirements.txt`
 - `Генератор картинок.bat` — starts the server and opens the UI in your browser
 
 ---

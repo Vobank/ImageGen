@@ -1,0 +1,15 @@
+# PyTorch с CUDA ставится отдельно, под свою версию CUDA:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+torch
+diffusers
+transformers
+accelerate
+safetensors
+huggingface_hub
+compel
+simple-lama-inpainting
+opencv-python
+numpy
+pillow
+flask
+requests
